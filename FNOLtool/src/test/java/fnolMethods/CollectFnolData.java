@@ -109,65 +109,104 @@ public class CollectFnolData
 						
 						if(cellTitle.equals("Store telephone number"))
 						{
-							String reg = cell.getStringCellValue();
-							String regFinal = reg.replaceAll(" ", "");
-							values.add(regFinal);
+							if(cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK)
+							{
+								String noData = "No Data Provided";
+								values.add(noData);
+							}
+							else
+							{
+								String reg = cell.getStringCellValue();
+								String regFinal = reg.replaceAll(" ", "");
+								values.add(regFinal);
+							}
 						}
 						if(cellTitle.equals("Collision time"))
 						{
-							switch(cell.getCellType())
+							if(cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK)
 							{
-								case Cell.CELL_TYPE_STRING:
-									SimpleDateFormat sdf1 = new SimpleDateFormat("HH:mm:ss");
-									String cv1 = sdf1.format(cell.getStringCellValue());
-									Date time1 = sdf1.parse(cv1);
-									values.add(time1);
-									break;
-								case Cell.CELL_TYPE_NUMERIC:
-									SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm:ss");
-									String cv2 = sdf2.format(cell.getDateCellValue());
-									Date time2 = sdf2.parse(cv2);
-									values.add(time2);
-									break;
+								String noData = "No Data Provided";
+								values.add(noData);
 							}
-
+							else
+							{
+								switch(cell.getCellType())
+								{
+									case Cell.CELL_TYPE_STRING:
+										SimpleDateFormat sdf1 = new SimpleDateFormat("HH:mm:ss");
+										String cv1 = sdf1.format(cell.getStringCellValue());
+										Date time1 = sdf1.parse(cv1);
+										values.add(time1);
+										break;
+									case Cell.CELL_TYPE_NUMERIC:
+										SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm:ss");
+										String cv2 = sdf2.format(cell.getDateCellValue());
+										Date time2 = sdf2.parse(cv2);
+										values.add(time2);
+										break;
+								}
+							}
 						}
 						if(cellTitle.equals("Collision date"))
 						{
-							SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-							String cv2 = sdf.format(cell.getDateCellValue());
-							Date date = sdf.parse(cv2);
-							
-							values.add(date);
+							if(cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK)
+							{
+								String noData = "No Data Provided";
+								values.add(noData);
+							}
+							else
+							{
+								SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+								String cv2 = sdf.format(cell.getDateCellValue());
+								Date date = sdf.parse(cv2);
+								
+								values.add(date);
+							}
 						}
 						if(cellTitle.equals("Collision causation code"))
 						{
-							switch(cell.getCellType())
+							if(cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK)
 							{
-								case Cell.CELL_TYPE_STRING:
-									String causationCode = "";
-									causationCode = cell.getStringCellValue();
-									values.add(causationCode);
-									break;
-								case Cell.CELL_TYPE_NUMERIC:
-									double cc = 0;
-									cc = cell.getNumericCellValue();
-									values.add(cc);
-									break;
+								String noData = "No Data Provided";
+								values.add(noData);
+							}
+							else
+							{
+								switch(cell.getCellType())
+								{
+									case Cell.CELL_TYPE_STRING:
+										String causationCode = "";
+										causationCode = cell.getStringCellValue();
+										values.add(causationCode);
+										break;
+									case Cell.CELL_TYPE_NUMERIC:
+										double cc = 0;
+										cc = cell.getNumericCellValue();
+										values.add(cc);
+										break;
+								}
 							}
 						}
 						if(cellTitle.equals("sopp+sopp Reference number "))
 						{
-							switch(cell.getCellType())
+							if(cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK)
 							{
-								case Cell.CELL_TYPE_STRING:
-									String ss = cell.getStringCellValue();
-									values.add(ss);
-									break;
-								case Cell.CELL_TYPE_NUMERIC:
-									double ssn = cell.getNumericCellValue();
-									values.add(ssn);
-									break;
+								String noData = "No Data Provided";
+								values.add(noData);
+							}
+							else
+							{
+								switch(cell.getCellType())
+								{
+									case Cell.CELL_TYPE_STRING:
+										String ss = cell.getStringCellValue();
+										values.add(ss);
+										break;
+									case Cell.CELL_TYPE_NUMERIC:
+										double ssn = cell.getNumericCellValue();
+										values.add(ssn);
+										break;
+								}
 							}
 						}
 							
@@ -240,7 +279,7 @@ public class CollectFnolData
 					if(cell.getColumnIndex() == 1)
 					{
 						String v = cellValue.toString();
-						if(v.equals("") || v.equals(null))
+						if(v.equals("") || v.equals(null) || v.equals("No VRN Provided"))
 						{
 							cell.setCellValue(v);
 							if(isConflict == true)
@@ -409,6 +448,11 @@ public class CollectFnolData
 	{
 		try
 		{
+			if(regCell == null || regCell.getCellType() == Cell.CELL_TYPE_BLANK)
+			{
+				String noData = "No VRN Provided";
+				return noData;
+			}
 			String carReg = regCell.getStringCellValue();
 			String carRegFixed = carReg.replaceAll(" ", "");
 			XSSFWorkbook deviceReportWorkbook = deviceReportSaved;
