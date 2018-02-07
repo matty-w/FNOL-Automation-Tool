@@ -50,7 +50,10 @@ public class GuiCode
 			JLabel picLabel = new JLabel(new ImageIcon(cmsLogo));
 			final JPanel panel = new JPanel();
 			
-			final JFrame frame = new JFrame("FNOL Application - (v1.3)");
+			final JFrame frame = new JFrame("FNOL Application - (v1.4)");
+			ImageIcon icon;
+			icon = new ImageIcon(f+"\\misc\\fnol.png");
+			frame.setIconImage(icon.getImage());
 			
 			
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
