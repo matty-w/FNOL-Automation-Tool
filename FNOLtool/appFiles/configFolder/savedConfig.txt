@@ -1,0 +1,5 @@
+COMBO_CHOICE=0
+FNOL_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\fnolFolder
+RESULTING_FOLDER_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\resultingFolder
+DEVICE_REPORT_FOLDER=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\deviceReportFolder
+FNOL_ROWS_SELECTED=

@@ -69,14 +69,14 @@ public class CollectFnolData
 		return listFnolFiles;
 	}
 	
-	public static void copyFnolDataIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar, JLabel progressBarText, JPanel panel)
+	public static void copyFnolDataIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar, JLabel progressBarText, JPanel panel, File claimsFileCopy)
 	{
 		try
 		{
 			GuiCode.updateProgressText("Copying FNOL data into Resulting file", progressBarText, panel);
 			GuiCode.updateProgressBar(bar, 3100);
 			List<Object> values = new ArrayList<Object>();
-			List<String> fnolClaims = createFnolConflictList();
+			List<String> fnolClaims = createFnolConflictList(claimsFileCopy);
 			final int fnolLength = 3000;
 			int progressCurrent = 3100;
 			
@@ -597,15 +597,13 @@ public class CollectFnolData
 		}
 	}
 	
-	private static List<String> createFnolConflictList()
+	private static List<String> createFnolConflictList(File claimsFlatFile)
 	{
 		try
 		{
 			List<String> fnolReferences = new ArrayList<String>();
 			Set<String> fnolReferencesAtomic = new HashSet<String>();
-			String mfiles = "M:\\Cloud Vault\\ID2\\D943E0A6-C9D3-4573-BDD0-DE54DBA3ED92\\0\\14000-14999\\14807\\L\\L\\Claim Flat File (ID 14807).xlsx";
-			File f = new File(mfiles);
-			FileInputStream fis = new FileInputStream(f);
+			FileInputStream fis = new FileInputStream(claimsFlatFile);
 			XSSFWorkbook workbook = new XSSFWorkbook(fis); 
 			XSSFSheet sheet  = workbook.getSheetAt(2);
 			Iterator<Row> rowIterator = sheet.iterator();
