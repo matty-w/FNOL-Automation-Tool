@@ -1,33 +1,23 @@
 package fnolInterfaceCode;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
 import javax.imageio.ImageIO;
-import javax.sql.RowSetWriter;
 import javax.swing.AbstractAction;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -41,21 +31,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
 
-import org.apache.commons.io.FileUtils;
 
-import com.sun.xml.internal.ws.api.pipe.FiberContextSwitchInterceptor;
 
 import fnolMethods.CollectFnolData;
 import logging.Logger;
@@ -70,7 +50,9 @@ public class GuiCode
 	static String resultingFolderSaved = "";
 	
 	static String deviceReportSaved = "";
+	static String claimsFileSaved = "";
 	static String defaultDeviceReportLocation = "";
+	static String defaultClaimsFileLocation = "";
 	
 	static boolean isSelectedAlready = false;
 	
@@ -79,22 +61,24 @@ public class GuiCode
 		try
 		{
 			
-			String openMfiles = "M:\\Cloud Vault";
 			final String f = new File("").getAbsolutePath();
 			
 			final File configFile = new File(f+"\\appFiles\\configFolder\\savedConfig.txt");
 			if(!(configFile.exists()))
 			{
-				String fnolLocation = f+"\\fnolFolder";
+				String emailLocation = f+"\\emailFolder";
 				String resultingFolder = f+"\\resultingFolder";
 				String deviceReportFolder = f+"\\deviceReportFolder";
+				String claimsFlatFileFolder = f+"\\claimsFlatFileFolder";
 				PrintWriter writer = new PrintWriter(configFile);
 				writer.println("COMBO_CHOICE=0");
-				writer.println("FNOL_LOCATION="+fnolLocation);
+				writer.println("FNOL_LOCATION="+emailLocation);
 				writer.println("RESULTING_FOLDER_LOCATION="+resultingFolder);
 				writer.println("DEVICE_REPORT_FOLDER="+deviceReportFolder);
+				writer.println("CLAIMS_FILE_FOLDER="+claimsFlatFileFolder);
 				writer.println("FNOL_ROWS_SELECTED=");
-				writer.println("START_MFILES=0");
+				writer.println("CLAIMS_CHECKBOX=1");
+				writer.println("DEVICE_CHECKBOX=1");
 				writer.println("");
 				writer.close();
 			}
@@ -106,50 +90,29 @@ public class GuiCode
 			String fnolLocation = getConfigDetails(configFile, 1);
 			String resultingFolder = getConfigDetails(configFile, 2);
 			String deviceReportFolder = getConfigDetails(configFile, 3);
+			String claimsFolder = getConfigDetails(configFile, 4);
+			String rowOptionsString = getConfigDetails(configFile, 5);
 			
-			String checkBoxOption = getConfigDetails(configFile, 5);
-			
-			final String claimsFileCopyPath = f+"\\appFiles\\claimsFileCopy\\flatFile.xlsx";
-			if(checkBoxOption.equals("0"))
-			{
-				String path = "M:\\Cloud Vault\\ID2\\D943E0A6-C9D3-4573-BDD0-DE54DBA3ED92\\0\\14000-14999\\14807\\L\\L\\Claim Flat File (ID 14807).xlsx";
-				Desktop d = null;
-				File mfiles = new File(openMfiles);
-				if(Desktop.isDesktopSupported())
-				{
-					if(mfiles.exists())
-					{
-						d = Desktop.getDesktop();
-						d.open(mfiles);
-						File file = new File(path);
-						final File copyFile = new File(claimsFileCopyPath);
-						Files.deleteIfExists(copyFile.toPath());
-						FileUtils.copyFile(file, copyFile);
-					}
-				}
-			}
+			String checkBoxOption = getConfigDetails(configFile, 6);
+			final String deviceCheckboxOption = getConfigDetails(configFile, 7);
 			
 			defaultFnolLocation = fnolLocation;
 			defaultResultingFolderLocation = resultingFolder;
 			defaultDeviceReportLocation = deviceReportFolder;
+			defaultClaimsFileLocation = claimsFolder;
 			
 			BufferedImage cmsLogo = ImageIO.read(new File(f+"\\appFiles\\images\\cmsLogoNew.png"));
 			JLabel picLabel = new JLabel(new ImageIcon(cmsLogo));
 			final JPanel panel = new JPanel();
 			
-			final JFrame frame = new JFrame("FNOL Application - (v1.5)");
+			final JFrame frame = new JFrame("FNOL Application - (v1.6)");
 			ImageIcon icon;
 			icon = new ImageIcon(f+"\\appFiles\\images\\fnol.png");
 			frame.setIconImage(icon.getImage());
 			
-
-
-
-			
-			
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-			JLabel fnolLocationTitle = new JLabel("FNOL Folder Location:");
+			JLabel fnolLocationTitle = new JLabel("Email Folder Location:");
 			fnolLocationTitle.setBounds(24, 120, 150, 20);
 			final JTextField fnolLocationTextField = new JTextField();
 			fnolLocationTextField.setBounds(24, 140, 550, 30);
@@ -170,38 +133,61 @@ public class GuiCode
 			final JTextField deviceReportTextField = new JTextField();
 			deviceReportTextField.setBounds(24, 300, 550, 30);
 			deviceReportTextField.setEditable(false);
-			JButton deviceReportBrowse = new JButton("Browse");
+			final JButton deviceReportBrowse = new JButton("Browse");
 			deviceReportBrowse.setBounds(580, 300, 95, 30);
+			
+			JLabel claimsFileCopyLabel = new JLabel("Claims Flat File Copy:");
+			claimsFileCopyLabel.setBounds(24, 360, 150, 20);
+			final JTextField claimsFileCopyTextField = new JTextField();
+			claimsFileCopyTextField.setBounds(24, 380, 550, 30);
+			claimsFileCopyTextField.setEditable(false);
+			final JButton claimsFileCopyBrowse = new JButton("Browse");
+			claimsFileCopyBrowse.setBounds(580, 380, 95, 30);
 			
 			final JButton startButton = new JButton("Start");
 			startButton.setEnabled(false);
 			startButton.setVisible(true);
-			startButton.setBounds(580, 370, 95, 40);
+			startButton.setBounds(580, 460, 95, 40);
 			
 			final JButton exitButton = new JButton("Exit");
 			exitButton.setEnabled(true);
 			exitButton.setVisible(true);
-			exitButton.setBounds(480, 370, 95, 40);
+			exitButton.setBounds(480, 460, 95, 40);
 			
 			final JProgressBar pBar = new JProgressBar();
 			pBar.setMinimum(PROGRESS_MIN);
 			pBar.setMaximum(PROGRESS_MAX);
-			pBar.setBounds(24, 370, 450, 40);
+			pBar.setBounds(24, 460, 450, 40);
 			
 			final JLabel progressBarText = new JLabel("Test Unable to Start");
-			progressBarText.setBounds(24, 350, 440, 20);
+			progressBarText.setBounds(24, 440, 440, 20);
 			progressBarText.setFont(new Font(progressBarText.getName(), Font.PLAIN, 10));
 			
-			final JLabel autoConnectToMFiles = new JLabel("Automatically Connect To M-Files Desktop:");
-			autoConnectToMFiles.setBounds(190, 90, 240, 20);
+			final JLabel useClaimsFileLabel = new JLabel("Locate Duplicates Using Claims Flat File :");
+			useClaimsFileLabel.setBounds(200, 70, 240, 20);
 			
-			final JCheckBox mFilesCheckbox = new JCheckBox();
-			mFilesCheckbox.setEnabled(false);
-			mFilesCheckbox.setBounds(435, 90, 20, 20);
+			final JCheckBox claimsFileCheckbox = new JCheckBox();
+			claimsFileCheckbox.setEnabled(true);
+			claimsFileCheckbox.setBounds(435, 70, 20, 20);
+
+			
+			
+			final JLabel useDeviceReportLabel = new JLabel("Associate Device ID With Vehicle :");
+			useDeviceReportLabel.setBounds(200, 95, 240, 20);
+			
+			final JCheckBox deviceReportCheckbox = new JCheckBox();
+			deviceReportCheckbox.setEnabled(true);
+			deviceReportCheckbox.setBounds(435, 95, 20, 20);
+			
 			if(checkBoxOption.equals("0"))
-				mFilesCheckbox.setSelected(true);
+				claimsFileCheckbox.setSelected(false);
 			else
-				mFilesCheckbox.setSelected(false);
+				claimsFileCheckbox.setSelected(true);
+			
+			if(deviceCheckboxOption.equals("0"))
+				deviceReportCheckbox.setSelected(false);
+			else
+				deviceReportCheckbox.setSelected(true);
 			
 			
 			
@@ -216,10 +202,16 @@ public class GuiCode
 			else
 				comboBox.setSelectedItem(comboBox.getItemAt(1));
 			
-			JTextArea rowOptions = new JTextArea();
-			rowOptions.setBounds(470, 20, 205, 100);
-			rowOptions.setEnabled(false);
+			final JTextArea rowOptions = new JTextArea();
+			rowOptions.setEditable(false);
 			rowOptions.setVisible(true);
+			JScrollPane scrollPane = new JScrollPane(rowOptions);
+			scrollPane.setBounds(470,20, 205, 100);
+			
+			
+			String[] items = rowOptionsString.split(Pattern.quote("$$$$"));
+			final List<String> options = Arrays.asList(items);
+			updateRowTextbox(rowOptions, options);
 			
 			panel.setLayout(null);			
 			picLabel.setBounds(-65, -10, 300, 130);
@@ -239,9 +231,14 @@ public class GuiCode
 			panel.add(progressBarText);
 			panel.add(comboBox);
 			panel.add(customiseRows);
-			panel.add(rowOptions);
-			panel.add(autoConnectToMFiles);
-			panel.add(mFilesCheckbox);
+			panel.add(useClaimsFileLabel);
+			panel.add(claimsFileCheckbox);
+			panel.add(claimsFileCopyTextField);
+			panel.add(claimsFileCopyBrowse);
+			panel.add(claimsFileCopyLabel);
+			panel.add(scrollPane);
+			panel.add(useDeviceReportLabel);
+			panel.add(deviceReportCheckbox);
 			
 			JMenuBar menuBar = new JMenuBar();
 			JMenu menu = new JMenu("Configuration Settings");
@@ -253,24 +250,33 @@ public class GuiCode
 				{
 					List<String> values = new ArrayList<String>();
 					String comboOption = "0";
-					String fnolLocation = f+"\\fnolFolder";
+					String fnolLocation = f+"\\emailFolder";
 					String resultingFolder = f+"\\resultingFolder";
 					String deviceReportFolder = f+"\\deviceReportFolder";
+					String claimsFolder = f+"\\claimsFlatFileFolder";
 					String fnolRows = "";
-					String mfilesStart = "0";
+					String claimsCheckbox = "1";
+					String deviceCheckbox = "1";
 					
 					comboBox.setSelectedItem(comboBox.getItemAt(0));
 					fnolLocationTextField.setText(fnolLocation);
 					resultingFileTextField.setText(resultingFolder);
 					deviceReportTextField.setText(deviceReportFolder);
-					mFilesCheckbox.setSelected(true);
+					claimsFileCopyTextField.setText(claimsFolder);
+					claimsFileCheckbox.setSelected(true);
+					claimsFileCopyBrowse.setEnabled(true);
 					
 					values.add(comboOption);
 					values.add(fnolLocation);
 					values.add(resultingFolder);
 					values.add(deviceReportFolder);
+					values.add(claimsFolder);
 					values.add(fnolRows);
-					values.add(mfilesStart);
+					values.add(claimsCheckbox);
+					values.add(deviceCheckbox);
+					
+					startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+							claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
 					
 					replaceConfigSettings(configFile, values);
 				}
@@ -284,28 +290,45 @@ public class GuiCode
 				{
 					List<String> values = new ArrayList<String>();
 					String comboBoxSetting;
-					String startMfiles;
+					String claimsCheckbox;
+					String deviceCheckbox;
+					String rows = "";
 					
 					if(comboBox.getSelectedItem().toString().equals("Tesco FNOL Default"))
 						comboBoxSetting = "0";
 					else
 						comboBoxSetting = "1";
 					
-					if(mFilesCheckbox.isSelected())
-						startMfiles = "0";
+					if(claimsFileCheckbox.isSelected())
+						claimsCheckbox = "1";
 					else
-						startMfiles = "1";
+						claimsCheckbox = "0";
+					
+					if(deviceReportCheckbox.isSelected())
+						deviceCheckbox = "1";
+					else
+						deviceCheckbox = "0";
 					
 					String newFnolLocation = fnolLocationTextField.getText();
 					String newResultingFileLocation = resultingFileTextField.getText();
 					String newDeviceReportLocation = deviceReportTextField.getText();
+					String newClaimsFileLocation = claimsFileCopyTextField.getText();
 					
+					String selectedRows = rowOptions.getText();
+					if(!(selectedRows.equals("")))
+					{
+					}
+					
+					
+					//TODO
 					values.add(comboBoxSetting);
 					values.add(newFnolLocation);
 					values.add(newResultingFileLocation);
 					values.add(newDeviceReportLocation);
+					values.add(newClaimsFileLocation);
 					values.add("");
-					values.add(startMfiles);
+					values.add(claimsCheckbox);
+					values.add(deviceCheckbox);
 					
 					
 					replaceConfigSettings(configFile, values);
@@ -316,7 +339,7 @@ public class GuiCode
 			menuBar.add(menu);
 			frame.setJMenuBar(menuBar);
 			
-			frame.setSize(700, 470);
+			frame.setSize(700, 560);
 			frame.add(panel);
 			frame.setLocationRelativeTo(null);
 			frame.setAlwaysOnTop(true);
@@ -326,16 +349,83 @@ public class GuiCode
 			fnolLocationTextField.setText(defaultFnolLocation);
 			resultingFileTextField.setText(defaultResultingFolderLocation);
 			deviceReportTextField.setText(defaultDeviceReportLocation);
+			claimsFileCopyTextField.setText(defaultClaimsFileLocation);
 			
 			customiseRows.setEnabled(enableRowsButton(comboOption));
-			startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, progressBarText));
+			//TODO
+			
+			if(comboBox.getSelectedItem().toString().equals("Custom FNOL Run"))
+			{
+				deviceReportCheckbox.setEnabled(true);
+				updateRowTextbox(rowOptions, options);
+				rowOptions.setEnabled(true);
+				claimsFileCheckbox.setEnabled(false);
+				claimsFileCheckbox.setSelected(false);
+				claimsFileCopyTextField.setText("");
+				claimsFileCopyTextField.setEnabled(false);
+				claimsFileCopyBrowse.setEnabled(false);
+				
+			}
+			else
+			{
+				//TODO
+				rowOptions.setText(" - Store telephone number\n - Collision time\n - Collision date\n - Collision causation code\n - sopp+sopp Reference number ");
+				deviceReportCheckbox.setSelected(true);
+				deviceReportCheckbox.setEnabled(false);
+				claimsFileCheckbox.setEnabled(true);
+				claimsFileCopyTextField.setText(defaultClaimsFileLocation);
+				claimsFileCopyTextField.setEnabled(true);
+				claimsFileCopyBrowse.setEnabled(true);
+				if(claimsFileCheckbox.isSelected())
+					claimsFileCopyBrowse.setEnabled(true);
+				else
+					claimsFileCopyBrowse.setEnabled(false);
+			}
+			
+			if(deviceReportCheckbox.isSelected())
+			{
+				deviceReportBrowse.setEnabled(true);
+				deviceReportTextField.setText(defaultDeviceReportLocation);
+			}
+			else
+			{
+				deviceReportBrowse.setEnabled(false);
+				deviceReportTextField.setText("");
+			}
+			
+			//TODO
+			deviceReportCheckbox.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					if(deviceReportCheckbox.isSelected())
+					{
+						deviceReportBrowse.setEnabled(true);
+						deviceReportTextField.setText(defaultDeviceReportLocation);
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+					}
+					else
+					{
+						deviceReportBrowse.setEnabled(false);
+						deviceReportTextField.setText("");
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+					}
+				}
+			});
+			
+			startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, claimsFileCopyTextField,
+					claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+				
 			
 			customiseRows.addActionListener(new ActionListener() 
 			{
 				public void actionPerformed(ActionEvent e) 
 				{
 					frame.setAlwaysOnTop(false);
-					new FnolTable();
+					new FnolTable(startButton, fnolLocationTextField, resultingFileTextField, deviceReportTextField, claimsFileCopyTextField,
+							claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions);
 				}
 			});
 			
@@ -345,14 +435,59 @@ public class GuiCode
 				{
 					if(comboBox.getSelectedItem().toString().equals("Custom FNOL Run"))
 					{
+						deviceReportCheckbox.setEnabled(true);
+						updateRowTextbox(rowOptions, options);
+						rowOptions.setEnabled(true);
 						customiseRows.setEnabled(true);
-						mFilesCheckbox.setSelected(false);
+						claimsFileCheckbox.setSelected(false);
+						claimsFileCheckbox.setEnabled(false);
+						claimsFileCopyBrowse.setEnabled(false);
+						claimsFileCopyTextField.setText("");
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, claimsFileCopyTextField,
+								claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
 					}
 					else
 					{
+						rowOptions.setText(" - Store telephone number\n - Collision time\n - Collision date\n - Collision causation code\n - sopp+sopp Reference number ");
+						deviceReportCheckbox.setSelected(true);
+						deviceReportCheckbox.setEnabled(false);
 						customiseRows.setEnabled(false);
-						mFilesCheckbox.setSelected(true);
+						claimsFileCheckbox.setEnabled(true);
+						if(claimsFileCheckbox.isSelected())
+						{
+							claimsFileCopyBrowse.setEnabled(true);
+							claimsFileCopyTextField.setEnabled(true);
+							claimsFileCopyTextField.setEditable(false);
+						}
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, claimsFileCopyTextField,
+								claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+							
 					}
+				}
+			});
+			
+			claimsFileCheckbox.addActionListener(new ActionListener() 
+			{
+				
+				public void actionPerformed(ActionEvent e) 
+				{
+					if(claimsFileCheckbox.isSelected())
+					{
+						claimsFileCopyBrowse.setEnabled(true);
+						claimsFileCopyTextField.setText(defaultClaimsFileLocation);
+						claimsFileCopyTextField.setEnabled(true);
+						claimsFileCopyTextField.setEditable(false);
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+					}
+					else
+					{
+						claimsFileCopyBrowse.setEnabled(false);
+						claimsFileCopyTextField.setText("");
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+					}
+						
 				}
 			});
 			
@@ -360,11 +495,15 @@ public class GuiCode
 			{
 				public void actionPerformed(ActionEvent e) 
 				{
+					String selectedFile = fnolLocationTextField.getText();
+					if(selectedFile.equals(""))
+						selectedFile = defaultFnolLocation;
+					
 					frame.setAlwaysOnTop(false);
-					JFileChooser fileChooser = new JFileChooser(defaultFnolLocation);
+					JFileChooser fileChooser = new JFileChooser(selectedFile);
 					
 					fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-					FileNameExtensionFilter filter = new FileNameExtensionFilter(".xls", "(*.xls)","xls");
+					FileNameExtensionFilter filter = new FileNameExtensionFilter(".msg", "(*.msg)","msg");
 					fileChooser.setFileFilter(filter);
 					fileChooser.setAcceptAllFileFilterUsed(false);
 					
@@ -372,13 +511,14 @@ public class GuiCode
 					if(rVal == JFileChooser.APPROVE_OPTION)
 					{
 						String selectedPath = fileChooser.getSelectedFile().toString();
-						if(selectedPath.endsWith(".xls"))
+						if(selectedPath.endsWith(".msg"))
 							selectedPath = selectedPath.substring(0 ,selectedPath.lastIndexOf("\\"));
 						fnolLocationTextField.setText(selectedPath);
 						fnolLocationSaved = selectedPath;
 						defaultFnolLocation = selectedPath;
 						
-						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, progressBarText));
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
 					}
 				}
 			});
@@ -388,7 +528,12 @@ public class GuiCode
 				public void actionPerformed(ActionEvent e) 
 				{
 					frame.setAlwaysOnTop(false);
-					JFileChooser fileChooser = new JFileChooser(defaultFnolLocation);
+					
+					String selectedFile = resultingFileTextField.getText();
+					if(selectedFile.equals(""))
+						selectedFile = defaultResultingFolderLocation;
+					
+					JFileChooser fileChooser = new JFileChooser(selectedFile);
 					
 					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 					fileChooser.setAcceptAllFileFilterUsed(false);
@@ -400,7 +545,8 @@ public class GuiCode
 						resultingFolderSaved = fileChooser.getSelectedFile().toString();
 						defaultResultingFolderLocation = fileChooser.getSelectedFile().toString();
 						
-						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, progressBarText));
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
 					}
 				}
 			});
@@ -410,7 +556,13 @@ public class GuiCode
 				public void actionPerformed(ActionEvent e) 
 				{
 					frame.setAlwaysOnTop(false);
-					JFileChooser fileChooser = new JFileChooser(defaultDeviceReportLocation);
+					
+					String selectedFile = deviceReportTextField.getText();
+					if(selectedFile.equals(""))
+						selectedFile = defaultDeviceReportLocation;
+					
+					
+					JFileChooser fileChooser = new JFileChooser(selectedFile);
 					FileNameExtensionFilter filter = new FileNameExtensionFilter(".csv", "(*.csv)","csv");
 					fileChooser.setFileFilter(filter);
 					fileChooser.setAcceptAllFileFilterUsed(false);
@@ -425,7 +577,36 @@ public class GuiCode
 						deviceReportSaved = selectedPath;
 						defaultDeviceReportLocation = selectedPath;
 						
-						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, progressBarText));
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField,
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
+					}
+				}
+			});
+			
+			claimsFileCopyBrowse.addActionListener(new ActionListener() 
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					frame.setAlwaysOnTop(false);
+					if(defaultClaimsFileLocation.equals(""))
+						defaultClaimsFileLocation = f+"\\claimsFlatFileFolder";
+					JFileChooser fileChooser = new JFileChooser(defaultClaimsFileLocation);
+					FileNameExtensionFilter filter = new FileNameExtensionFilter(".xlsx", "(*.xlsx)","xlsx");
+					fileChooser.setFileFilter(filter);
+					fileChooser.setAcceptAllFileFilterUsed(false);
+					
+					fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+					
+					int rVal = fileChooser.showOpenDialog(null);
+					if(rVal == JFileChooser.APPROVE_OPTION)
+					{
+						String selectedPath = fileChooser.getSelectedFile().getAbsolutePath().toString();
+						claimsFileCopyTextField.setText(selectedPath);
+						claimsFileSaved = selectedPath;
+						defaultClaimsFileLocation = selectedPath;
+						
+						startButton.setEnabled(enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+								claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, rowOptions));
 					}
 				}
 			});
@@ -434,6 +615,7 @@ public class GuiCode
 			{
 				public void actionPerformed(ActionEvent e) 
 				{
+					File copyFile = null;
 					updateProgressText("Test Start", progressBarText, panel);
 					updateProgressBar(pBar, 100);
 					String fnolLocation = fnolLocationSaved;
@@ -449,21 +631,25 @@ public class GuiCode
 					if(resultingFolderSaved.equals(""))
 						rfLocation = defaultResultingFolderLocation;
 					updateProgressBar(pBar, 600);
-					File[] fnolFiles = CollectFnolData.getAllFnolFiles(fnolLocation, pBar, progressBarText, panel);
+					File[] fnolFiles = CollectFnolData.extractFnolsFromEmails(fnolLocation, pBar, progressBarText, panel);
 					updateProgressBar(pBar, 1100);
+					if(deviceReportSaved.equals(""))
+						deviceReportSaved = deviceReportTextField.getText();
 					CollectFnolData.convertDeviceReportToXlsx(deviceReportSaved, pBar, progressBarText, panel);
 					updateProgressBar(pBar, 2100);
 					CollectFnolData.createResultingFile(rfLocation, pBar, progressBarText, panel);
 					updateProgressBar(pBar, 3000);
-					File copyFile = new File(claimsFileCopyPath);
-					CollectFnolData.copyFnolDataIntoSpreadsheet(fnolFiles, deviceReportTextField.getText(), pBar, progressBarText, panel, copyFile);
+					if(claimsFileCheckbox.isSelected())
+						copyFile = new File(claimsFileCopyTextField.getText());
+					CollectFnolData.copyFnolDataIntoSpreadsheet(fnolFiles, deviceReportSaved, pBar, progressBarText, panel, copyFile);
 					updateProgressBar(pBar, 6200);
 					updateProgressText("Delete Converted Device Report", progressBarText, panel);
-					CollectFnolData.deleteDeviceReportXlsx(deviceReportSaved);
+					CollectFnolData.deleteDeviceReportXlsx(deviceReportTextField.getText());
 					updateProgressText("Converted Device Report Deleted", progressBarText, panel);
 					updateProgressBar(pBar, 6400);
 					updateProgressText("Renaming Resulting File", progressBarText, panel);
 					CollectFnolData.renameResultingFile(rfLocation);
+					CollectFnolData.deleteTempFnolContents(f+"/appFiles/tempFnols");
 					updateProgressText("Renaming Completed", progressBarText, panel);
 					updateProgressBar(pBar, PROGRESS_MAX);
 					updateProgressText("Test Completed. Cleaning up.", progressBarText, panel);
@@ -531,20 +717,171 @@ public class GuiCode
 		GuiCode.fnolLocationSaved = fnolLocation;
 	}
 	
-	public static boolean enableStart(JTextField fnol, JTextField resultingFile, JTextField deviceReport, JLabel progressBarText)
+	public static boolean enableStart(JTextField fnol, JTextField resultingFile, JTextField deviceReport, JTextField claimsFile, 
+			JCheckBox claimsBox,JLabel progressBarText, JComboBox<String> comboBox, JCheckBox deviceBox, JTextArea rowChoices)
 	{
 		boolean enableStartButton = false;
 		
-		if(!(fnol.getText().isEmpty()))
-			if(!(resultingFile.getText().isEmpty()))
-				if(!(deviceReport.getText().isEmpty()))
-					if(deviceReport.getText().endsWith(".csv"))
+		String fnolPath = fnol.getText();
+		
+		File fnolDirectory = new File(fnolPath);
+		
+		if(comboBox.getSelectedItem().toString().equals("Tesco FNOL Default"))
+		{
+			if(claimsBox.isSelected())
+			{
+				if(deviceBox.isSelected())
+					if(fnolDirectory.isDirectory())
 					{
-						progressBarText.setText("All Options Valid, Test May Now Begin");
-						enableStartButton = true;
+						if(!(fnolDirectory.list().length == 0))
+						{
+							if(!(resultingFile.getText().isEmpty()))
+							{
+								if(!(deviceReport.getText().isEmpty()))
+								{
+									if(deviceReport.getText().endsWith(".csv"))
+									{
+										if(!(claimsFile.getText().isEmpty()))
+										{
+											if(claimsFile.getText().endsWith(".xlsx"))
+											{
+												progressBarText.setText("All Options Valid, Test May Now Begin");
+												enableStartButton = true;
+											}
+											else
+												progressBarText.setText("Claims Flat File Not Correct Extension, Must Be '.XLSX'.");
+										}
+										else
+											progressBarText.setText("No Claims Flat File Selected. Test Cannot Start.");
+									}
+									else
+										progressBarText.setText("Device Report Selected Not Correct File Extentsion, Must Be '.CSV'");
+
+								}
+								else
+									progressBarText.setText("No Device Report Selected. Test Cannot Start");
+
+							}
+							else
+								progressBarText.setText("No Location Selected For Resulting File. Test Cannot Start");
+
+						}
+						else
+							progressBarText.setText("No Files Located In Directory For Emails");
+
 					}
-						
-		return enableStartButton;
+					else
+						progressBarText.setText("FNOL Location Is Not A Directory, Please Select A Directory/Folder.");
+
+			}
+			else
+			{
+				if(!(deviceBox.isSelected()))
+				{
+					if(fnolDirectory.isDirectory())
+					{
+						if(!(fnolDirectory.list().length == 0))
+						{
+							if(!(resultingFile.getText().isEmpty()))
+							{
+								if(!(deviceReport.getText().isEmpty()))
+								{
+									if(deviceReport.getText().endsWith(".csv"))
+									{
+										progressBarText.setText("All Options Valid, Test May Now Begin");
+										enableStartButton = true;
+									}
+									else
+										progressBarText.setText("Device Report Selected Not Correct File Extentsion, Must Be '.CSV'");
+								}
+								else
+									progressBarText.setText("No Device Report Selected. Test Cannot Start");
+							}	
+							else
+								progressBarText.setText("No Location Selected For Resulting File. Test Cannot Start");
+						}
+						else
+							progressBarText.setText("No Files Located In Directory For Emails");
+					}
+					else
+						progressBarText.setText("FNOL Location Is Not A Directory, Please Select A Directory/Folder.");
+
+				}
+				else
+				{
+					if(fnolDirectory.isDirectory())
+					{
+						if(!(fnolDirectory.list().length == 0))
+						{
+							if(!(resultingFile.getText().isEmpty()))
+							{
+								if(deviceReport.getText().endsWith(".csv"))
+								{
+									progressBarText.setText("All Options Valid, Test May Now Begin");
+									enableStartButton = true;
+								}
+								else
+									progressBarText.setText("Device Report Selected Not Correct File Extentsion, Must Be '.CSV'");
+							}
+							else
+								progressBarText.setText("No Location Selected For Resulting File. Test Cannot Start");
+						}
+						else
+							progressBarText.setText("No Files Located In Directory For Emails");
+					}
+					else
+						progressBarText.setText("FNOL Location Is Not A Directory, Please Select A Directory/Folder.");
+				}
+			}
+							
+			return enableStartButton;
+		}
+		else
+		{
+			if(deviceBox.isSelected())
+			{
+				if(fnolDirectory.isDirectory())
+				{
+					if(!(fnolDirectory.list().length == 0))
+					{
+						if(!(resultingFile.getText().isEmpty()))
+						{
+							if(!(deviceReport.getText().isEmpty()))
+							{
+								if(deviceReport.getText().endsWith(".csv"))
+								{
+									if(!(rowChoices.getText().equals("")))
+									{
+										System.out.println(rowChoices.getText());
+										progressBarText.setText("All Options Valid, Test May Now Begin");
+										enableStartButton = true;
+									}
+									else
+										progressBarText.setText("No Row Options Selected For Customised Run.");
+								}
+								else
+									progressBarText.setText("Device Report Selected Not Correct File Extentsion, Must Be '.CSV'");
+							}
+							else
+								progressBarText.setText("No Device Report Selected. Test Cannot Start");
+						}
+						else
+							progressBarText.setText("No Location Selected For Resulting File. Test Cannot Start");
+					}
+					else
+						progressBarText.setText("No Files Located In Directory For Emails");
+				}
+				else
+					progressBarText.setText("FNOL Location Is Not A Directory, Please Select A Directory/Folder.");
+			}
+			else
+			{
+				
+			}
+			
+			return enableStartButton;
+		}
+		
 	}
 	
 	public static boolean enableRowsButton(String comboOption)
@@ -555,7 +892,7 @@ public class GuiCode
 			return true;
 	}
 	
-	private static String getConfigDetails(File configFile, int row)
+	public static String getConfigDetails(File configFile, int row)
 	{
 		try 
 		{
@@ -593,19 +930,36 @@ public class GuiCode
 			String fnol = "FNOL_LOCATION="+newValues.get(1);
 			String resultingFolder = "RESULTING_FOLDER_LOCATION="+newValues.get(2);
 			String deviceReport = "DEVICE_REPORT_FOLDER="+newValues.get(3);
-			String rowSettings = "FNOL_ROWS_SELECTED="+newValues.get(4);
-			String startMfiles = "START_MFILES="+newValues.get(5);
+			String claimsFolder = "CLAIMS_FILE_FOLDER="+newValues.get(4);
+			String rowSettings = "FNOL_ROWS_SELECTED="+newValues.get(5);
+			String claimsCheckbox = "CLAIMS_CHECKBOX="+newValues.get(6);
+			String deviceCheckbox = "DEVICE_CHECKBOX="+newValues.get(7);
 			PrintWriter writer = new PrintWriter(file);
 			writer.println(comboBox);
 			writer.println(fnol);
 			writer.println(resultingFolder);
 			writer.println(deviceReport);
+			writer.println(claimsFolder);
 			writer.println(rowSettings);
-			writer.println(startMfiles);
+			writer.println(claimsCheckbox);
+			writer.println(deviceCheckbox);
 			writer.close();
 		} 
 		catch (Exception e) 
 		{
+		}
+	}
+	
+	private static void updateRowTextbox(JTextArea rowList, List<String> options) 
+	{
+		rowList.setText("");
+		//TODO
+		if(!(options.get(0).equals("")))
+		{
+			for(String row : options)
+			{
+				rowList.append(" - "+row+"\n");
+			}
 		}
 	}
 }	

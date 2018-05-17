@@ -1,6 +1,9 @@
 COMBO_CHOICE=0
-FNOL_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\fnolFolder
+FNOL_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\emailFolder
 RESULTING_FOLDER_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\resultingFolder
 DEVICE_REPORT_FOLDER=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\deviceReportFolder
-FNOL_ROWS_SELECTED=
-START_MFILES=0
+CLAIMS_FILE_FOLDER=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\claimsFlatFileFolder
+FNOL_ROWS_SELECTED=Postcode||18
+CLAIMS_CHECKBOX=1
+DEVICE_CHECKBOX=1
+

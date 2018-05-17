@@ -9,18 +9,28 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
@@ -32,48 +42,21 @@ import org.apache.poi.ss.usermodel.Cell;
 
 public class FnolTable 
 {
-	public FnolTable()
+	public FnolTable(final JButton startButton, final JTextField fnolLocationTextField, final JTextField resultingFileTextField, 
+			final JTextField deviceReportTextField, final JTextField claimsFileCopyTextField, final JCheckBox claimsFileCheckbox, 
+			final JLabel progressBarText, final JComboBox<String> comboBox, final JCheckBox deviceReportCheckbox,final JTextArea area)
 	{
 		final JFrame fnolFrame = new JFrame("Select FNOL Rows");
 		Object columnNames[] = {"FNOL Row Title", "Example Data", ""};
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		
-		final Object test[][] = getDefaultFnol();
+		final Object test[][] = getDefaultFnol();	
 		
-		final Object rowData[][] = {{"Tesco DotCom Incident Report Form","",null},{"Date Of Call", "11/01/18",false},{"Start Time Of Call","12:00:00",false},
-				{"Finish Time Of Call","12:30:00",false},{"Has Anyone Sustained Any Injuries","NO",false},{"Have The Emergency Services Attended","NO",false},
-				{"Is The Tesco Vehicle Drivable","YES",false},{"Is Vehicle Recovery Required", "NO",false},{"TESCO DETAILS","",false},{"Tesco Driver's Name","Mr F Name",false},
-				{"Tesco Driver's Date Of Birth","01/01/1990",false},{"Tesco Driver's Employee Number","UK123456789",false},{"Has This Tesco Driver Sustained Injuries","N/A",false},
-				{"If Injured Type Of Injury","N/A",false},{"Tesco Drivers Contact Number","123456789",false},{"Tesco / Agency Driver","Own",false},
-				{"If Agency, Which Agency","N/A",false},{"Store Address","Some Address",false},{"Postcode","MM11MM",false},{"Store Telephone Number","123456789",false},
-				{"Tesco Vehicle Registration Number","DD1X12",false},{"Vehicle Make / Model","IVECO VAN",false},{"Van Number","00001",false},{"Is Vehicle Loaded","YES",false},
-				{"Start Time Of Driver's Shift","18:00",false},{"End Time Of Driver's Shift","22:00",false},{"Tesco Business Division","Tesco Dotcom",false},
-				{"THIRD PARTY DETAILS","",false},{"Driver / Property Occupant Name","S NAME",false},{"Gender Of Third Party","MALE",false},{"Occupation","N/K",false},
-				{"Address","21 Some Address, Somewhere",false},{"Postcode","FF11FF",false},{"Email Address","N/K",false},{"Contact Telephone Number - Home","123456789",false},
-				{"Contact Telephone Number - Mobile","987654321",false},{"Type Of Third Party","Property Owner",false},{"Has This Third Party Sustained Injuries","NO",false},
-				{"If Injured Type Of Injury","N/A",false},{"Was The Third Party Driver In The Vehicle At The Time Of The Incident","N/A",false},
-				{"Third Party Vehicle Registration Number","N/A",false},{"Vehicle Make / Model","N/A",false},{"Number Of People In Third Party Vehicle (Including Driver","1",false},
-				{"Position Of Third Party Vehicle","N/A",false},{"Type of Third Party Property","Wall (Domestic)",false},{"Third party insurer","N/K",false},
-				{"Has BUMP CARD been given to Third Party / Property Owner","YES",false},{"Did the Third Party admit Liability at the scene of the collision","NO",false},
-				{"Description of damage to Third Party vehicle / Property","ENDS BRICKS LOOSE",false},{"Was there any pre-existing damage to the Third Party Vehicle","NO",false},
-				{"Vehicle / Property owner name (If different to Driver / Property occupant name)","N/A",false},{"Owner Contact Number","N/A",false},{"Owner Email Address","N/A",false},
-				{"Owner Address","N/A",false},{"Owner Postcode","N/A",false},{"COLLISION CIRCUMSTANCES","",false},{"Collision time","21:00",false},{"Collision date","01/01/18",false},
-				{"Collision location","SOME ADDRESS, ADDRESS",false},{"Collision sub location","On The Road",false},{"Collision causation code","HIT TP WALL/BUILDING/GATE/OBJECT",false},
-				{"Type of road","Single carriageway C road",false},{"Position Of Tesco Vehicle on road","TRAVELLING FORWARDS",false},{"Road Conditions","Wet",false},
-				{"Weather Conditions","Dry Overcast",false},{"Description of damage to Tesco vehicle","NEARSID SIDE STEP BENT.",false},
-				{"Was another Third Party involved causing damage to the Tesco vehicle","YES",false},{"If No Cause of damage ","N/A",false},
-				{"Did the collision happen in daylight","NO",false},{"Did Tesco driver admit Liability at the scene of the collision","NO",false},
-				{"Have you completed a sketch of the collision scene","NO",false},{"Please give a brief description of the collision circumstances ","Some description",false},
-				{"In Tesco’s Opinion do you believe the third party property / vehicle is owned by Tesco.","NO",false},{"Have photographs been taken","YES",false},
-				{"Was driver aware incident occurred","YES",false},{"Was the driver in the area at the time of incident","YES",false},{"WITNESS DETAILS","",false},
-				{"Were there any witnesses","NO",false},{"Witness 1 name","N/A",false},{"Witness 1 address","N/A",false},{"Witness 1 postcode","N/A",false},
-				{"Witness 1 telephone number","N/A",false},{"Witness 2 name","N/A",false},{"Witness 2 address","N/A",false},{"Witness 2 postcode","N/A",false},
-				{"Witness 2 telephone number","N/A",false},{"POLICE DETAILS","",false},{"Did the police attend the scene","NO",false},{"Police Officer name ","N/A",false},
-				{"Police Officer badge number","N/A",false},{"Police station","N/A",false},{"Police station telephone number","N/A",false},{"Police Reference","N/A",false},
-				{"FURTHER INFORMATION","",false},{"sopp+sopp further comments","NONE",false},{"sopp+sopp Reference number","000000",false},{"Plexus Reference Number","N/A",false},
-				{"Who took original call","sopp+sopp",false},{"Full Name and Position of person reporting incident","SOME NAME - CDD",false},{"Driver Trainer Name","N/A",false},
-				{"Driver Trainer Email Address","N/A",false}};
+		List<String> duplicateValues = composeDuplicateList(test);
+		
+		determineWhichCheckboxesSelected(test);
+		
 		
 		
 		JPanel panel = new JPanel();
@@ -81,9 +64,9 @@ public class FnolTable
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		
 		
-		final JTable rowTable = new JTable(rowData, columnNames);
+		final JTable rowTable = new JTable(test, columnNames);
 		
-		DefaultTableModel model = new DefaultTableModel(rowData, columnNames)
+		DefaultTableModel model = new DefaultTableModel(test, columnNames)
 		{
 			private static final long serialVersionUID = 1L;
 
@@ -104,7 +87,6 @@ public class FnolTable
                     {
                     	return Boolean.class;
                     }
-                        
                 }
 				return null;
             }
@@ -172,6 +154,8 @@ public class FnolTable
 					if(isChecked.equals(true))
 						rowTable.setValueAt(false, i, 2);
 				}
+				startButton.setEnabled(GuiCode.enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+						claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, area));
 			}
 		});
 		
@@ -179,7 +163,33 @@ public class FnolTable
 		{
 			public void actionPerformed(ActionEvent e)
 			{
+				String totalSelectedLong = "";
+				String finalCut = "";
+				final String f = new File("").getAbsolutePath();
 				
+				int totalRows = rowTable.getRowCount();
+				
+				for(int i = 0; i < totalRows; i++)
+				{
+					String value = rowTable.getValueAt(i, 0).toString();
+					Boolean isChecked = Boolean.valueOf(rowTable.getValueAt(i, 2).toString());
+					if(isChecked.equals(true))
+					{
+						int rowNum = i;
+						totalSelectedLong = totalSelectedLong+value+"||"+rowNum+"$$$$";
+					}
+				}
+				
+				if(totalSelectedLong.equals(""))
+					finalCut = "";
+				else
+					finalCut = totalSelectedLong.substring(0, totalSelectedLong.length()-4);
+				
+				Path path = Paths.get(f+"\\appFiles\\configFolder\\savedConfig.txt");
+				updateConfigForRows(path, finalCut);
+				String[] items = finalCut.split(Pattern.quote("$$$$"));
+				List<String> options = Arrays.asList(items);
+				updateRowTextbox(area, options);
 			}
 		});
 		
@@ -187,16 +197,83 @@ public class FnolTable
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				List<String> rowData = selectedRowData(rowTable);
-				fnolFrame.dispose();
+				String totalSelectedLong = "";
+				String finalCut = "";
+				final String f = new File("").getAbsolutePath();
 				
+				int totalRows = rowTable.getRowCount();
+				
+				for(int i = 0; i < totalRows; i++)
+				{
+					String value = rowTable.getValueAt(i, 0).toString();
+					Boolean isChecked = Boolean.valueOf(rowTable.getValueAt(i, 2).toString());
+					if(isChecked.equals(true))
+					{
+						totalSelectedLong = totalSelectedLong+value+"$$$$";
+					}
+				}
+				
+				if(totalSelectedLong.equals(""))
+					finalCut = "";
+				else
+					finalCut = totalSelectedLong.substring(0, totalSelectedLong.length()-4);
+				
+				Path path = Paths.get(f+"\\appFiles\\configFolder\\savedConfig.txt");
+				updateConfigForRows(path, finalCut);
+				String[] items = finalCut.split(Pattern.quote("$$$$"));
+				List<String> options = Arrays.asList(items);
+				updateRowTextbox(area, options);
+				fnolFrame.dispose();
+				//TODO
+				startButton.setEnabled(GuiCode.enableStart(fnolLocationTextField, resultingFileTextField, deviceReportTextField, 
+						claimsFileCopyTextField, claimsFileCheckbox, progressBarText, comboBox, deviceReportCheckbox, area));
 			}
 		});
 	}
 	
-	private void updateRowTextbox(JTextArea rowBox, List<String> options) 
+	private void determineWhichCheckboxesSelected(Object[][] object)
 	{
+		final String f = new File("").getAbsolutePath();
+		final File configFile = new File(f+"\\appFiles\\configFolder\\savedConfig.txt");
+		String checkedOptions = GuiCode.getConfigDetails(configFile, 5);
+		String[] items = checkedOptions.split(Pattern.quote("$$$$"));
 		
+		if(!(checkedOptions.equals("")))
+		{
+			int objectLength = object.length;
+			
+			for(int i = 0; i < objectLength; i++)
+			{
+				String title = (String) object[i][0];
+				
+				//TODO
+				for(String item : items)
+				{
+					String[] options = item.split(Pattern.quote("||"));
+					String savedTitle = options[0];
+					String line = options[1];
+					int lineNum = Integer.parseInt(line);
+					
+					if(savedTitle.equals(title))
+					{
+						if(lineNum == i)
+						{
+							object[i][2] = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	private void updateRowTextbox(JTextArea rowList, List<String> options) 
+	{
+		rowList.setText("");
+		//TODO
+		for(String row : options)
+		{
+			rowList.append(" - "+row+"\n");
+		}
 	}
 	
 	
@@ -218,6 +295,7 @@ public class FnolTable
 			HSSFSheet sheet = fnolWorkbook.getSheetAt(0);
 			int rows = 102;
 			System.out.println(rows);
+			System.out.println(sheet.getLastRowNum());
 			
 			for(int i = 0; i < rows; i++)
 			{
@@ -272,6 +350,54 @@ public class FnolTable
 		}
 	}
 	
+	
+	private List<String> composeDuplicateList(Object[][] object)
+	{
+		Set<String> setToReturn = new HashSet<String>();
+		Set<String> set1 = new HashSet<String>();
+		int length = object.length;
+		List<String> duplicateList = new ArrayList<String>();
+		List<String> titles = new ArrayList<String>();
+		
+		for(int i = 0; i < length; i++)
+		{
+			String s = (String) object[i][0];
+			titles.add(s);
+		}
+		
+		for(String stringValue : titles)
+		{
+			if(!(set1.add(stringValue)))
+			{
+				setToReturn.add(stringValue);
+			}
+		}
+		
+		duplicateList.addAll(setToReturn);
+		return duplicateList;
+	}
+	
+	private boolean checkIfChecked(String rowTitleString)
+	{
+		boolean isSelected = false;
+		final String f = new File("").getAbsolutePath();
+		final File configFile = new File(f+"\\appFiles\\configFolder\\savedConfig.txt");
+		String selectedValuesList = GuiCode.getConfigDetails(configFile, 5);
+		if(selectedValuesList.equals(""))
+			return false;
+		
+		
+		//TODO
+		String[] items = selectedValuesList.split(Pattern.quote("$$$$"));
+		final List<String> selectedValues = Arrays.asList(items);
+		
+		for(String value : selectedValues)
+			if(rowTitleString.equals(value))
+				isSelected = true;
+		
+		return isSelected;
+	}
+	
 
 	
 	private List<String> selectedRowData(JTable table)
@@ -290,6 +416,26 @@ public class FnolTable
 			}
 		}
 		return optionsSelect;
+	}
+	
+	private void updateConfigForRows(Path file, String valueLong)
+	{
+		try 
+		{
+			List<String> fileContent = new ArrayList<String>(Files.readAllLines(file, StandardCharsets.UTF_8));
+			
+			for (int i = 0; i < fileContent.size(); i++) {
+			    if (fileContent.get(i).contains("FNOL_ROWS_SELECTED=")) 
+			    {
+			        fileContent.set(i, "FNOL_ROWS_SELECTED="+valueLong);
+			        break;
+			    }
+			}
+			Files.write(file, fileContent, StandardCharsets.UTF_8);
+		} 
+		catch (Exception e) 
+		{
+		}
 	}
 
 	static class CustomRenderer extends DefaultTableCellRenderer 

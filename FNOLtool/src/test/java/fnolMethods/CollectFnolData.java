@@ -1,12 +1,14 @@
 package fnolMethods;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,6 +26,8 @@ import javax.swing.JProgressBar;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
+import org.apache.poi.hsmf.MAPIMessage;
+import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -47,6 +51,103 @@ public class CollectFnolData
 	static XSSFWorkbook deviceReportSaved = null;
 	static List<Object> fnolReferencesListSaved = new ArrayList<Object>();
 	
+	public static File[] extractFnolsFromEmails(String emailDirectory, JProgressBar bar, final JLabel progressBarText, final JPanel panel)
+	{
+		try
+		{
+			final String f = new File("").getAbsolutePath(); 
+			List<String> fileNames = new ArrayList<String>();
+			File emailFolder = new File(emailDirectory);
+			File[] listEmailFiles = emailFolder.listFiles(new FilenameFilter() 
+			{
+				public boolean accept(File dir, String name) 
+				{
+					return name.endsWith(".msg");
+				}
+			});
+			
+			
+			for(int i = 0; i < listEmailFiles.length; i++)
+			{
+				if(listEmailFiles[i].isFile())
+				{
+					String name = listEmailFiles[i].getPath();
+					fileNames.add(name);
+				}
+			}
+			
+			for(int i = 0; i < fileNames.size(); i++)
+			{
+				String msgFileString = fileNames.get(i);
+				MAPIMessage msg = new MAPIMessage(msgFileString);
+				
+				AttachmentChunks[] attachments = msg.getAttachmentFiles();
+				if(attachments.length > 0) 
+				{
+		            for (AttachmentChunks a  : attachments) 
+		            {
+		                ByteArrayInputStream fileIn = new ByteArrayInputStream(a.attachData.getValue());
+		                File msgFile = new File(f+"/appFiles/tempFnols", a.attachLongFileName.toString()); // output
+		                OutputStream fileOut = null;
+		                try 
+		                {
+		                    fileOut = new FileOutputStream(msgFile);
+		                    byte[] buffer = new byte[2048];
+		                    int bNum = fileIn.read(buffer);
+		                    while(bNum > 0) 
+		                    {
+		                        fileOut.write(buffer);
+		                        bNum = fileIn.read(buffer);
+		                    }
+		                }
+		                finally 
+		                {
+		                    try 
+		                    {
+		                        if(fileIn != null) 
+		                        {
+		                            fileIn.close();
+		                        }
+		                    }
+		                    finally 
+		                    {
+		                        if(fileOut != null) 
+		                        {
+		                            fileOut.close();
+		                        }
+		                    }
+		                }
+		            }
+		        }
+		        else
+		        {
+		        }
+			}
+		}
+		catch(Exception e)
+		{
+			int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
+			Logger.recordError(e, lineNum);
+			String f = new File("").getAbsolutePath();
+			String loggingDirectory = f+"\\errorLogging";
+			ErrorGui.openErrorGui(loggingDirectory);
+		}
+		
+		final String f = new File("").getAbsolutePath(); 
+		File fnolFolder = new File(f+"/appFiles/tempFnols");
+		File[] listFnols = fnolFolder.listFiles(new FilenameFilter() 
+		{
+			public boolean accept(File dir, String name) 
+			{
+				if(name.contains("ref") || name.contains("Ref"))
+					return name.endsWith(".xls");
+				return false;
+			}
+		});
+		
+		return listFnols;
+	}
+	
 	public static File[] getAllFnolFiles(String directory, JProgressBar bar, final JLabel progressBarText, final JPanel panel)
 	{
 		GuiCode.updateProgressBar(bar, 700);
@@ -69,16 +170,17 @@ public class CollectFnolData
 		return listFnolFiles;
 	}
 	
-	public static void copyFnolDataIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar, JLabel progressBarText, JPanel panel, File claimsFileCopy)
+	public static void copyFnolDataIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar, JLabel progressBarText, JPanel panel, File claimsFile)
 	{
 		try
 		{
 			GuiCode.updateProgressText("Copying FNOL data into Resulting file", progressBarText, panel);
 			GuiCode.updateProgressBar(bar, 3100);
 			List<Object> values = new ArrayList<Object>();
-			List<String> fnolClaims = createFnolConflictList(claimsFileCopy);
+			List<String> fnolClaims = createFnolConflictList(claimsFile);
 			final int fnolLength = 3000;
 			int progressCurrent = 3100;
+			
 			
 			for(int i = 0; i < fnolFiles.length; i++)
 			{
@@ -283,7 +385,7 @@ public class CollectFnolData
 						{
 							cell.setCellValue(v);
 							if(isConflict == true)
-								cell.setCellStyle(cellStyleFail);
+							  cell.setCellStyle(cellStyleFail);
 						}
 						else
 						{
@@ -602,10 +704,26 @@ public class CollectFnolData
 		try
 		{
 			List<String> fnolReferences = new ArrayList<String>();
+			XSSFSheet sheet = null;
+			
+			if(claimsFlatFile == null)
+			{
+				fnolReferences = null;
+				return fnolReferences;
+			}
+			
+			
 			Set<String> fnolReferencesAtomic = new HashSet<String>();
 			FileInputStream fis = new FileInputStream(claimsFlatFile);
 			XSSFWorkbook workbook = new XSSFWorkbook(fis); 
-			XSSFSheet sheet  = workbook.getSheetAt(2);
+			
+			for(int i = 0; i < workbook.getNumberOfSheets(); i++)
+			{
+				String sheetName = workbook.getSheetName(i);
+				if(sheetName.equals("Tesco"))
+					sheet = workbook.getSheetAt(i);
+			}
+			
 			Iterator<Row> rowIterator = sheet.iterator();
 			
 			while(rowIterator.hasNext())
@@ -738,6 +856,9 @@ public class CollectFnolData
 	
 	private static boolean checkIfConflictExists(Object fnolRef, List<String> fnolClaims)
 	{
+		if(fnolClaims == null)
+			return false;
+		
 		if(fnolRef instanceof String)
 		{
 			String s = (String) fnolRef;
@@ -810,5 +931,14 @@ public class CollectFnolData
 			String loggingDirectory = f+"\\errorLogging";
 			ErrorGui.openErrorGui(loggingDirectory);
 		}
+	}
+	
+	public static void deleteTempFnolContents(String directory)
+	{
+		File f = new File(directory);
+		File[] contents = f.listFiles();
+		
+		for(File file : contents)
+			file.delete();
 	}
 }
