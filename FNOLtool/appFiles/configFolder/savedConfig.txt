@@ -3,7 +3,7 @@ FNOL_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\email
 RESULTING_FOLDER_LOCATION=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\resultingFolder
 DEVICE_REPORT_FOLDER=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\deviceReportFolder
 CLAIMS_FILE_FOLDER=C:\Users\Matt\Documents\GitHub\FNOL-Automation-Tool\FNOLtool\claimsFlatFileFolder
-FNOL_ROWS_SELECTED=Postcode||18
+FNOL_ROWS_SELECTED=Store telephone number||19$$$$Collision time||56$$$$Collision date||57$$$$Collision causation code||60$$$$sopp+sopp Reference number ||95
 CLAIMS_CHECKBOX=1
 DEVICE_CHECKBOX=1
 

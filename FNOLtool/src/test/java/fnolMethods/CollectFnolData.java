@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -30,6 +31,7 @@ import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
@@ -170,7 +172,8 @@ public class CollectFnolData
 		return listFnolFiles;
 	}
 	
-	public static void copyFnolDataIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar, JLabel progressBarText, JPanel panel, File claimsFile)
+	public static void copyFnolDataIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar, 
+													JLabel progressBarText, JPanel panel, File claimsFile, List<String> defaultOptions)
 	{
 		try
 		{
@@ -197,14 +200,61 @@ public class CollectFnolData
 				
 				Iterator<Row> rowIterator = sheet.iterator();
 				
+				Row testRow = sheet.getRow(101);
+				Cell testCell = testRow.getCell(0);
+				String cellValue = testCell.getStringCellValue();
 				
+				if(!(cellValue.equals("Driver Trainer Email Address")))
+				{
+					String reason = "";
+					String fnolFileName = fnolFile.getName();
+					if(cellValue.equals(""))
+						reason = "FNOL Is Too Short To Accurately Mine For Results. Check File Manually";
+					else
+						reason = "FNOL Is Too Long To Accurately Mine For Results. Check File Manually";
+					pasteErrorIntoFile(fnolFileName, reason);
+					continue;
+				}
+				
+				//TODO
 				while(rowIterator.hasNext())
 				{
 					Row row = rowIterator.next();
 					Cell titleCell = row.getCell(0);
 					String cellTitle = titleCell.getStringCellValue();
 					
-					if(cellTitle.equals("Store telephone number") || cellTitle.equals("Collision time")|| cellTitle.equals("Collision date")
+					for(int k = 0; k < defaultOptions.size(); k++)
+					{
+						String[] tempItems = defaultOptions.get(k).split(Pattern.quote("||"));
+						if(cellTitle.equals(tempItems[0]))
+						{
+							Cell cell = row.getCell(1);
+							cell.setCellType(Cell.CELL_TYPE_STRING);
+							if(cellTitle.equals("Store telephone number"))
+							{
+								String deviceID = calculateDeviceId(cell, deviceReportLocation);
+								values.add(deviceID);
+							}
+							if(cell.getStringCellValue().equals(""))
+							{
+								String noData = "No Data Provided";
+								values.add(noData);
+							}
+							else
+							{
+								String value = cell.getStringCellValue();
+								values.add(value);
+							}
+						}
+					}
+					
+					
+
+					
+					
+					
+					
+					/*if(cellTitle.equals("Store telephone number") || cellTitle.equals("Collision time")|| cellTitle.equals("Collision date")
 							|| cellTitle.equals("Collision causation code")|| cellTitle.equals("sopp+sopp Reference number "))
 					{
 						Cell cell = row.getCell(1);
@@ -332,7 +382,7 @@ public class CollectFnolData
 							String fnolFileName = fnolFile.getName();
 							values.add(fnolFileName);
 						}
-					}
+					}*/
 				}
 				pasteCellsIntoFile(values, fnolClaims);
 				values.clear();
@@ -342,6 +392,234 @@ public class CollectFnolData
 		{
 		}
 
+	}
+	
+	public static void copyCustomFnolIntoSpreadsheet(File[] fnolFiles, String deviceReportLocation, JProgressBar bar,
+														JLabel progressBarText, JPanel panel, List<String> selectedRows)
+	{
+		//TODO
+		List<List<String>> values = new ArrayList<List<String>>();
+		
+		for(int i = 0; i < fnolFiles.length; i++)
+		{
+			try
+			{
+				List<String> list = new ArrayList<String>();
+				list.add(fnolFiles[i].getName());
+				File file = fnolFiles[i];
+				FileInputStream fis = new FileInputStream(file);
+				
+				HSSFWorkbook fnolWorkbook = new HSSFWorkbook(fis);
+				
+				HSSFSheet sheet = fnolWorkbook.getSheetAt(0);
+				
+				
+				
+				Row testRow = sheet.getRow(101);
+				Cell testCell = testRow.getCell(0);
+				String cellValue = testCell.getStringCellValue();
+				
+				
+				
+				
+				if(!(cellValue.equals("Driver Trainer Email Address")))
+				{
+					String reason = "";
+					String fnolFileName = file.getName();
+					if(cellValue.equals(""))
+						reason = "FNOL Is Too Short To Accurately Mine For Results. Check File Manually";
+					else
+						reason = "FNOL Is Too Long To Accurately Mine For Results. Check File Manually";
+					pasteErrorIntoFile(fnolFileName, reason);
+					continue;
+				}
+				
+				for(String selectedOption : selectedRows)
+				{
+					Iterator<Row> rowIterator = sheet.iterator();
+					while(rowIterator.hasNext())
+					{
+						String option = selectedOption;
+						String[] options = option.split(Pattern.quote("||"));
+						int rowNumber = Integer.parseInt(options[1]);
+						Row row = rowIterator.next();
+						int fnolRowNum = row.getRowNum();
+						Cell titleCell = row.getCell(0);
+						String cellTitle = titleCell.getStringCellValue();
+						
+						if(cellTitle.equals(options[0]))
+						{
+							if(rowNumber+1 == fnolRowNum)
+							{
+								Cell cell = row.getCell(1);
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								String cv = cell.getStringCellValue();
+								list.add(cv);
+							}
+						}
+						
+					}
+				}
+				pasteCustomCellsIntoFile(list);
+				
+
+			}
+			catch(Exception e)
+			{
+				
+			}
+		}
+	}
+	
+	private static void pasteCustomCellsIntoFile(List<String> values)
+	{
+		try
+		{
+			FileInputStream fis = new FileInputStream(resultingFile);
+			XSSFWorkbook fnolWorkbook = new XSSFWorkbook(fis);
+			XSSFSheet sheet = fnolWorkbook.getSheetAt(0);
+			int lastRow = sheet.getLastRowNum();
+			Row row = sheet.createRow(lastRow+1);
+			
+			for(int k = 0; k < values.size(); k++)
+			{
+				String valueToSet = values.get(k);
+				if(valueToSet.equals(""))
+					valueToSet = "No Data Available";
+				Cell cell = row.createCell(k);
+				cell.setCellValue(valueToSet);
+				sheet.autoSizeColumn(k);
+			}
+			FileOutputStream outputStream = new FileOutputStream(resultingFile);
+			fnolWorkbook.write(outputStream);
+	        outputStream.flush();
+	        outputStream.close();
+	        fis.close();	
+		}
+		catch(Exception e)
+		{
+			
+		}	
+	}
+	
+	public static void createCustomResultsFile(String directoryLocation, List<String> selectedOptions, JProgressBar bar, JLabel progressBarText, JPanel panel)
+	{
+		//TODO
+		try
+		{
+			String fileLocation = directoryLocation+"\\test.xlsx";
+			
+			File f = new File(fileLocation);
+			
+			if(f.exists())
+			{
+				resultingFile = f;
+				return;
+			}
+			else
+			{
+				XSSFWorkbook resultingSpreadsheet = new XSSFWorkbook();
+				XSSFSheet sheet = resultingSpreadsheet.createSheet("Results");
+				XSSFSheet problemFnols = resultingSpreadsheet.createSheet("Problem FNOLs");
+				
+				Row problemFnolsTitle = problemFnols.createRow(0);
+				Cell fnol = problemFnolsTitle.createCell(0);
+				Cell reason = problemFnolsTitle.createCell(1);
+				
+				Row titleRow = sheet.createRow(0);
+				Cell fnolTitle = titleRow.createCell(0);
+				fnolTitle.setCellValue("FNOL Title");
+				
+				for(String option : selectedOptions)
+				{
+					int colNum = selectedOptions.indexOf(option)+1;
+					Cell cell = titleRow.createCell(colNum);
+					String[] options = option.split(Pattern.quote("||"));
+					cell.setCellValue(options[0]);
+					sheet.autoSizeColumn(colNum);
+				}
+				
+				fnol.setCellValue("FNOL Title");
+				reason.setCellValue("Reason For Fail");
+				
+				problemFnols.autoSizeColumn(0);
+				problemFnols.autoSizeColumn(1);
+				GuiCode.updateProgressBar(bar, 2700);
+				
+				FileOutputStream outputStream = new FileOutputStream(fileLocation);
+				resultingSpreadsheet.write(outputStream);
+		        outputStream.flush();
+		        outputStream.close();
+				
+			}
+			GuiCode.updateProgressText("Resulting File Created", progressBarText, panel);
+			resultingFile = f;
+		}
+		catch(Exception e)
+		{
+			int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
+			Logger.recordError(e, lineNum);
+			String f = new File("").getAbsolutePath();
+			String loggingDirectory = f+"\\errorLogging";
+			ErrorGui.openErrorGui(loggingDirectory);
+		}
+
+	}
+	
+	private static String getChoiceTitle(HSSFSheet sheet, int rowNum)
+	{
+		Row selectedRow = sheet.getRow(rowNum);
+		Cell selectedCell = selectedRow.getCell(0);
+		CellStyle style = selectedCell.getCellStyle();
+		HSSFColor color = (HSSFColor) style.getFillForegroundColorColor();
+		System.out.print(color.getHexString());
+		
+		
+		for(int i = rowNum; i > 0; i--)
+		{
+			Row row = sheet.getRow(i);
+			Cell cell = row.getCell(0);
+			String cellTitle = cell.getStringCellValue();
+			System.out.println(cellTitle);
+			CellStyle s = cell.getCellStyle();
+			HSSFColor c = (HSSFColor) s.getFillForegroundColorColor();
+			System.out.print(c.getHexString());
+			if(!(c.getHexString().equals(color.getHexString())))
+			{
+				
+				System.out.println("!!!!!"+cellTitle);
+				return cell.getStringCellValue();
+			}
+		}
+		
+		return "";
+	}
+	
+	private static void pasteErrorIntoFile(String fnolFile, String reason)
+	{
+		try
+		{
+			FileInputStream fis = new FileInputStream(resultingFile);
+			XSSFWorkbook fnolWorkbook = new XSSFWorkbook(fis);
+			XSSFSheet sheet = fnolWorkbook.getSheetAt(1);
+			int lastRow = sheet.getLastRowNum();
+			Row row = sheet.createRow(lastRow+1);
+			Cell cell1 = row.createCell(0);
+			Cell cell2 = row.createCell(1);
+			cell1.setCellValue(fnolFile);
+			cell2.setCellValue(reason);
+			sheet.autoSizeColumn(0);
+			sheet.autoSizeColumn(1);
+			FileOutputStream outputStream = new FileOutputStream(resultingFile);
+			fnolWorkbook.write(outputStream);
+	        outputStream.flush();
+	        outputStream.close();
+	        fis.close();
+		}
+		catch(Exception e)
+		{
+			
+		}
 	}
 	
 	private static void pasteCellsIntoFile(List<Object> cellValues, List<String> refListConflicts)
@@ -489,7 +767,12 @@ public class CollectFnolData
 				GuiCode.updateProgressBar(bar, 2350);
 				XSSFWorkbook resultingSpreadsheet = new XSSFWorkbook();
 				XSSFSheet sheet = resultingSpreadsheet.createSheet("Results");
+				XSSFSheet problemFnols = resultingSpreadsheet.createSheet("Problem FNOLs");
 				GuiCode.updateProgressBar(bar, 2400);
+				
+				Row problemFnolsTitle = problemFnols.createRow(0);
+				Cell fnol = problemFnolsTitle.createCell(0);
+				Cell reason = problemFnolsTitle.createCell(1);
 				
 				Row titleRow = sheet.createRow(0);
 				Cell cell1 = titleRow.createCell(0);
@@ -503,6 +786,7 @@ public class CollectFnolData
 				Cell cell9 = titleRow.createCell(8);
 				GuiCode.updateProgressBar(bar, 2500);
 				
+				//TODO
 				cell1.setCellValue("VRN");
 				cell2.setCellValue("Device ID");
 				cell3.setCellValue("");
@@ -512,6 +796,9 @@ public class CollectFnolData
 				cell7.setCellValue("Sopp + Sopp Reference");
 				cell8.setCellValue("Collision Causation Code");
 				cell9.setCellValue("FNOL File Name");
+				
+				fnol.setCellValue("FNOL Title");
+				reason.setCellValue("Reason For Fail");
 				GuiCode.updateProgressBar(bar, 2600);
 				
 				sheet.autoSizeColumn(0);
@@ -523,6 +810,9 @@ public class CollectFnolData
 				sheet.autoSizeColumn(6);
 				sheet.autoSizeColumn(7);
 				sheet.autoSizeColumn(8);
+				
+				problemFnols.autoSizeColumn(0);
+				problemFnols.autoSizeColumn(1);
 				GuiCode.updateProgressBar(bar, 2700);
 				
 				FileOutputStream outputStream = new FileOutputStream(fileLocation);

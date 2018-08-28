@@ -209,7 +209,7 @@ public class FnolTable
 					Boolean isChecked = Boolean.valueOf(rowTable.getValueAt(i, 2).toString());
 					if(isChecked.equals(true))
 					{
-						totalSelectedLong = totalSelectedLong+value+"$$$$";
+						totalSelectedLong = totalSelectedLong+value+"||"+i+"$$$$";
 					}
 				}
 				
@@ -307,33 +307,10 @@ public class FnolTable
 					String rowTitleString;
 					String exampleDataString = null;
 					
-					if(rowTitle.getCellType() != Cell.CELL_TYPE_STRING)
-					{
-						Double cellValue = rowTitle.getNumericCellValue();
-						rowTitleString = String.valueOf(cellValue);
-					}
-					else
-					{
-						rowTitleString = rowTitle.getStringCellValue();
-					}
-					
-					if(exampleData.getCellType() != Cell.CELL_TYPE_STRING)
-					{
-						switch(exampleData.getCellType())
-						{
-							case Cell.CELL_TYPE_NUMERIC:
-							{
-								Double cellValue = exampleData.getNumericCellValue();
-								exampleDataString = String.valueOf(cellValue);
-							}
-						}
-					}
-					else
-					{
-						exampleDataString = exampleData.getStringCellValue();
-					}
-					
-					
+					rowTitle.setCellType(Cell.CELL_TYPE_STRING);
+					exampleData.setCellType(Cell.CELL_TYPE_STRING);
+					rowTitleString = rowTitle.getStringCellValue();
+					exampleDataString = exampleData.getStringCellValue();
 					Object[] tableRow = {rowTitleString, exampleDataString, false}; 
 					objectList.add(tableRow);
 				}
@@ -349,7 +326,6 @@ public class FnolTable
 			return null;
 		}
 	}
-	
 	
 	private List<String> composeDuplicateList(Object[][] object)
 	{

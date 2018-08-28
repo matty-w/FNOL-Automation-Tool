@@ -53,6 +53,7 @@ public class GuiCode
 	static String claimsFileSaved = "";
 	static String defaultDeviceReportLocation = "";
 	static String defaultClaimsFileLocation = "";
+	static String selectedRowOptionsSaved = "";
 	
 	static boolean isSelectedAlready = false;
 	
@@ -62,6 +63,7 @@ public class GuiCode
 		{
 			
 			final String f = new File("").getAbsolutePath();
+			
 			
 			final File configFile = new File(f+"\\appFiles\\configFolder\\savedConfig.txt");
 			if(!(configFile.exists()))
@@ -292,7 +294,6 @@ public class GuiCode
 					String comboBoxSetting;
 					String claimsCheckbox;
 					String deviceCheckbox;
-					String rows = "";
 					
 					if(comboBox.getSelectedItem().toString().equals("Tesco FNOL Default"))
 						comboBoxSetting = "0";
@@ -334,8 +335,19 @@ public class GuiCode
 					replaceConfigSettings(configFile, values);
 				}
 			});
+			
+			JMenuItem setDefaultFnolRows = new JMenuItem(new AbstractAction("Set Default FNOL Rows") 
+			{
+				private static final long serialVersionUID = 1L;
+				
+				public void actionPerformed(ActionEvent e) 
+				{
+					new DefaultFnolRowPopup();
+				}
+			});
 			menu.add(restoreDefault);
 			menu.add(saveConfig);
+			menu.add(setDefaultFnolRows);
 			menuBar.add(menu);
 			frame.setJMenuBar(menuBar);
 			
@@ -369,7 +381,8 @@ public class GuiCode
 			else
 			{
 				//TODO
-				rowOptions.setText(" - Store telephone number\n - Collision time\n - Collision date\n - Collision causation code\n - sopp+sopp Reference number ");
+				rowOptions.setText(" - Store telephone number||19\n - Collision time||56\n - Collision date||57\n -"
+						+ " Collision causation code||60\n - sopp+sopp Reference number ||95");
 				deviceReportCheckbox.setSelected(true);
 				deviceReportCheckbox.setEnabled(false);
 				claimsFileCheckbox.setEnabled(true);
@@ -448,7 +461,11 @@ public class GuiCode
 					}
 					else
 					{
-						rowOptions.setText(" - Store telephone number\n - Collision time\n - Collision date\n - Collision causation code\n - sopp+sopp Reference number ");
+						selectedRowOptionsSaved = " - Store telephone number||19\n - Collision time||56\n - Collision date||57\n -"
+								+ " Collision causation code||60\n - sopp+sopp Reference number ||95";
+						
+						rowOptions.setText(" - Store telephone number\n - Collision time\n - Collision date\n -"
+								+ " Collision causation code\n - sopp+sopp Reference number ");
 						deviceReportCheckbox.setSelected(true);
 						deviceReportCheckbox.setEnabled(false);
 						customiseRows.setEnabled(false);
@@ -615,66 +632,119 @@ public class GuiCode
 			{
 				public void actionPerformed(ActionEvent e) 
 				{
-					File copyFile = null;
-					updateProgressText("Test Start", progressBarText, panel);
-					updateProgressBar(pBar, 100);
-					String fnolLocation = fnolLocationSaved;
-					updateProgressText("Setting FNOL Location", progressBarText, panel);
-					updateProgressBar(pBar, 200);
-					if(fnolLocationSaved.equals(""))
-						fnolLocation = defaultFnolLocation;
-					updateProgressBar(pBar, 400);
-					updateProgressText("Setting Resulting File Location", progressBarText, panel);
-					String rfLocation = resultingFolderSaved;
-					updateProgressText("Resulting File Location Saved", progressBarText, panel);
-					updateProgressBar(pBar, 500);
-					if(resultingFolderSaved.equals(""))
-						rfLocation = defaultResultingFolderLocation;
-					updateProgressBar(pBar, 600);
-					File[] fnolFiles = CollectFnolData.extractFnolsFromEmails(fnolLocation, pBar, progressBarText, panel);
-					updateProgressBar(pBar, 1100);
-					if(deviceReportSaved.equals(""))
-						deviceReportSaved = deviceReportTextField.getText();
-					CollectFnolData.convertDeviceReportToXlsx(deviceReportSaved, pBar, progressBarText, panel);
-					updateProgressBar(pBar, 2100);
-					CollectFnolData.createResultingFile(rfLocation, pBar, progressBarText, panel);
-					updateProgressBar(pBar, 3000);
-					if(claimsFileCheckbox.isSelected())
-						copyFile = new File(claimsFileCopyTextField.getText());
-					CollectFnolData.copyFnolDataIntoSpreadsheet(fnolFiles, deviceReportSaved, pBar, progressBarText, panel, copyFile);
-					updateProgressBar(pBar, 6200);
-					updateProgressText("Delete Converted Device Report", progressBarText, panel);
-					CollectFnolData.deleteDeviceReportXlsx(deviceReportTextField.getText());
-					updateProgressText("Converted Device Report Deleted", progressBarText, panel);
-					updateProgressBar(pBar, 6400);
-					updateProgressText("Renaming Resulting File", progressBarText, panel);
-					CollectFnolData.renameResultingFile(rfLocation);
-					CollectFnolData.deleteTempFnolContents(f+"/appFiles/tempFnols");
-					updateProgressText("Renaming Completed", progressBarText, panel);
-					updateProgressBar(pBar, PROGRESS_MAX);
-					updateProgressText("Test Completed. Cleaning up.", progressBarText, panel);
-					try 
+					if(comboBox.getSelectedItem().toString().equals("Tesco FNOL Default"))
 					{
-						TimeUnit.SECONDS.sleep(3);
-						updateProgressBar(pBar, PROGRESS_MIN);
-						String path = rfLocation;
-						Desktop d = null;
-						File file = new File(path);
-						if(Desktop.isDesktopSupported())
+						String checkedSubstring = selectedRowOptionsSaved.replaceAll(" - ", "");
+						String[] options = checkedSubstring.split(Pattern.quote("\n"));
+						List<String> selectedRows = Arrays.asList(options);
+						File copyFile = null;
+						updateProgressText("Test Start", progressBarText, panel);
+						updateProgressBar(pBar, 100);
+						String fnolLocation = fnolLocationSaved;
+						updateProgressText("Setting FNOL Location", progressBarText, panel);
+						updateProgressBar(pBar, 200);
+						if(fnolLocationSaved.equals(""))
+							fnolLocation = defaultFnolLocation;
+						updateProgressBar(pBar, 400);
+						updateProgressText("Setting Resulting File Location", progressBarText, panel);
+						String rfLocation = resultingFolderSaved;
+						updateProgressText("Resulting File Location Saved", progressBarText, panel);
+						updateProgressBar(pBar, 500);
+						if(resultingFolderSaved.equals(""))
+							rfLocation = defaultResultingFolderLocation;
+						updateProgressBar(pBar, 600);
+						File[] fnolFiles = CollectFnolData.extractFnolsFromEmails(fnolLocation, pBar, progressBarText, panel);
+						updateProgressBar(pBar, 1100);
+						if(deviceReportSaved.equals(""))
+							deviceReportSaved = deviceReportTextField.getText();
+						CollectFnolData.convertDeviceReportToXlsx(deviceReportSaved, pBar, progressBarText, panel);
+						updateProgressBar(pBar, 2100);
+						CollectFnolData.createResultingFile(rfLocation, pBar, progressBarText, panel);
+						updateProgressBar(pBar, 3000);
+						if(claimsFileCheckbox.isSelected())
+							copyFile = new File(claimsFileCopyTextField.getText());
+						CollectFnolData.copyFnolDataIntoSpreadsheet(fnolFiles, deviceReportSaved, pBar, progressBarText, panel, copyFile, selectedRows);
+						updateProgressBar(pBar, 6200);
+						updateProgressText("Delete Converted Device Report", progressBarText, panel);
+						CollectFnolData.deleteDeviceReportXlsx(deviceReportTextField.getText());
+						updateProgressText("Converted Device Report Deleted", progressBarText, panel);
+						updateProgressBar(pBar, 6400);
+						updateProgressText("Renaming Resulting File", progressBarText, panel);
+						CollectFnolData.renameResultingFile(rfLocation);
+						CollectFnolData.deleteTempFnolContents(f+"/appFiles/tempFnols");
+						updateProgressText("Renaming Completed", progressBarText, panel);
+						updateProgressBar(pBar, PROGRESS_MAX);
+						updateProgressText("Test Completed. Cleaning up.", progressBarText, panel);
+						try 
 						{
-							d = Desktop.getDesktop();
-							d.open(file);
+							TimeUnit.SECONDS.sleep(3);
+							updateProgressBar(pBar, PROGRESS_MIN);
+							String path = rfLocation;
+							Desktop d = null;
+							File file = new File(path);
+							if(Desktop.isDesktopSupported())
+							{
+								d = Desktop.getDesktop();
+								d.open(file);
+							}
 						}
+						catch (Exception e1) 
+						{
+							int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
+							Logger.recordError(e1, lineNum);
+							String f = new File("").getAbsolutePath();
+							String loggingDirectory = f+"\\errorLogging";
+							ErrorGui.openErrorGui(loggingDirectory);
+						}
+						updateProgressText("All Options Valid, Test May Now Begin", progressBarText, panel);
 					}
-					catch (Exception e1) 
+					else
 					{
-						int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
-						Logger.recordError(e1, lineNum);
-						String f = new File("").getAbsolutePath();
-						String loggingDirectory = f+"\\errorLogging";
-						ErrorGui.openErrorGui(loggingDirectory);
+						String checkedOptionsFull = rowOptions.getText();
+						String checkedSubstring = checkedOptionsFull.replaceAll(" - ", "");
+						String[] options = checkedSubstring.split(Pattern.quote("\n"));
+						List<String> selectedRows = Arrays.asList(options);
+						String fnolLocation = fnolLocationSaved;
+						if(fnolLocationSaved.equals(""))
+							fnolLocation = defaultFnolLocation;
+						String rfLocation = resultingFolderSaved;
+						if(deviceReportSaved.equals(""))
+							deviceReportSaved = deviceReportTextField.getText();	
+						File[] fnolFiles = CollectFnolData.extractFnolsFromEmails(fnolLocation, pBar, progressBarText, panel);
+						if(deviceReportSaved.equals(""))
+							deviceReportSaved = deviceReportTextField.getText();
+						if(resultingFolderSaved.equals(""))
+							rfLocation = defaultResultingFolderLocation;
+						//CollectFnolData.convertDeviceReportToXlsx(deviceReportSaved, pBar, progressBarText, panel);
+						CollectFnolData.createCustomResultsFile(rfLocation, selectedRows, pBar, progressBarText, panel);
+						CollectFnolData.copyCustomFnolIntoSpreadsheet(fnolFiles, deviceReportSaved, pBar, progressBarText, panel, selectedRows);
+						CollectFnolData.renameResultingFile(rfLocation);
+						CollectFnolData.deleteTempFnolContents(f+"/appFiles/tempFnols");
+						
+						try 
+						{
+							TimeUnit.SECONDS.sleep(3);
+							updateProgressBar(pBar, PROGRESS_MIN);
+							String path = rfLocation;
+							Desktop d = null;
+							File file = new File(path);
+							if(Desktop.isDesktopSupported())
+							{
+								d = Desktop.getDesktop();
+								d.open(file);
+							}
+						}
+						catch (Exception e1) 
+						{
+							int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
+							Logger.recordError(e1, lineNum);
+							String f = new File("").getAbsolutePath();
+							String loggingDirectory = f+"\\errorLogging";
+							ErrorGui.openErrorGui(loggingDirectory);
+						}
+						updateProgressText("All Options Valid, Test May Now Begin", progressBarText, panel);
 					}
-					updateProgressText("All Options Valid, Test May Now Begin", progressBarText, panel);
+
 				}
 			});
 			
@@ -852,7 +922,6 @@ public class GuiCode
 								{
 									if(!(rowChoices.getText().equals("")))
 									{
-										System.out.println(rowChoices.getText());
 										progressBarText.setText("All Options Valid, Test May Now Begin");
 										enableStartButton = true;
 									}
@@ -876,7 +945,31 @@ public class GuiCode
 			}
 			else
 			{
-				
+				if(!(deviceBox.isSelected()))
+				{
+					if(fnolDirectory.isDirectory())
+					{
+						if(!(fnolDirectory.list().length == 0))
+						{
+							if(!(resultingFile.getText().isEmpty()))
+							{
+								if(!(rowChoices.getText().equals("")))
+								{
+									progressBarText.setText("All Options Valid, Test May Now Begin");
+									enableStartButton = true;
+								}
+								else
+									progressBarText.setText("No Row Options Selected For Customised Run.");
+							}
+							else
+								progressBarText.setText("No Location Selected For Resulting File. Test Cannot Start");
+						}
+						else
+							progressBarText.setText("No Files Located In Directory For Emails");
+					}
+					else
+						progressBarText.setText("FNOL Location Is Not A Directory, Please Select A Directory/Folder.");
+				}
 			}
 			
 			return enableStartButton;
@@ -917,6 +1010,11 @@ public class GuiCode
 		}
 		catch (Exception e) 
 		{
+			int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
+			Logger.recordError(e, lineNum);
+			String f = new File("").getAbsolutePath();
+			String loggingDirectory = f+"\\errorLogging";
+			ErrorGui.openErrorGui(loggingDirectory);
 		}
 		return "";
 	}
@@ -947,13 +1045,17 @@ public class GuiCode
 		} 
 		catch (Exception e) 
 		{
+			int lineNum = Thread.currentThread().getStackTrace()[2].getLineNumber();
+			Logger.recordError(e, lineNum);
+			String f = new File("").getAbsolutePath();
+			String loggingDirectory = f+"\\errorLogging";
+			ErrorGui.openErrorGui(loggingDirectory);
 		}
 	}
 	
 	private static void updateRowTextbox(JTextArea rowList, List<String> options) 
 	{
 		rowList.setText("");
-		//TODO
 		if(!(options.get(0).equals("")))
 		{
 			for(String row : options)
