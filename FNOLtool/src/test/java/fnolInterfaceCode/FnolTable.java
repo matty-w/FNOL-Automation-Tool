@@ -15,9 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.swing.BoxLayout;
@@ -53,7 +51,7 @@ public class FnolTable
 		
 		final Object test[][] = getDefaultFnol();	
 		
-		List<String> duplicateValues = composeDuplicateList(test);
+		//List<String> duplicateValues = composeDuplicateList(test);
 		
 		determineWhichCheckboxesSelected(test);
 		
@@ -327,7 +325,7 @@ public class FnolTable
 		}
 	}
 	
-	private List<String> composeDuplicateList(Object[][] object)
+	/*private List<String> composeDuplicateList(Object[][] object)
 	{
 		Set<String> setToReturn = new HashSet<String>();
 		Set<String> set1 = new HashSet<String>();
@@ -392,7 +390,7 @@ public class FnolTable
 			}
 		}
 		return optionsSelect;
-	}
+	}*/
 	
 	private void updateConfigForRows(Path file, String valueLong)
 	{

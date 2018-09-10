@@ -31,7 +31,6 @@ import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
@@ -398,7 +397,7 @@ public class CollectFnolData
 														JLabel progressBarText, JPanel panel, List<String> selectedRows)
 	{
 		//TODO
-		List<List<String>> values = new ArrayList<List<String>>();
+		//List<List<String>> values = new ArrayList<List<String>>();
 		
 		for(int i = 0; i < fnolFiles.length; i++)
 		{
@@ -566,7 +565,7 @@ public class CollectFnolData
 
 	}
 	
-	private static String getChoiceTitle(HSSFSheet sheet, int rowNum)
+	/*private static String getChoiceTitle(HSSFSheet sheet, int rowNum)
 	{
 		Row selectedRow = sheet.getRow(rowNum);
 		Cell selectedCell = selectedRow.getCell(0);
@@ -593,7 +592,7 @@ public class CollectFnolData
 		}
 		
 		return "";
-	}
+	}*/
 	
 	private static void pasteErrorIntoFile(String fnolFile, String reason)
 	{
